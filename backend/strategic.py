@@ -1,4 +1,4 @@
-"""The short list: the companies that matter, and what adding one sets off.
+"""The short list: the companies that matter, and the Expert each one gets.
 
 `Settings/Strategic-Entities.md` in the App Database Folder, one row each:
 
@@ -6,31 +6,27 @@
     |---|---|---|---|---|
     | ADNOC | Customer | strategic-adnoc | 2026-09-24 | operator |
 
-Markdown, because the operator reads and edits this file himself, the same as
-the Action Center's owner book.
+Markdown, because the operator reads and edits this file himself.
 
-**Adding one is not just a row.** It asks for an Expert agent scoped to that
-entity's folder and tags, so the company has someone to ask about it. A plugin
-cannot create an agent -- `api.agents` only reads, and a plugin cannot even find
-where agents live (framework `REQ-SB-93`) -- so the request is left here and the
-install's own Hermes job writes it. Removing one asks for the Expert to be
-deleted again: removing undoes what adding did (operator, 2026-09-24).
-
-The row is written immediately either way. The Expert follows within a tick, and
-the screen says which state a row is actually in rather than pretending.
+**Adding one is not just a row.** The company gets an Expert scoped to its folder
+and tags, so there is somebody to ask about it; removing one deletes that Expert
+again. The agent itself is created through the framework's own `POST /agents`,
+which does the whole job -- the Hermes profile and the Registry files -- and
+`DELETE /agents/{id}` undoes it. This module writes the row and says what the
+Expert should be; the screen makes the call.
 """
 from __future__ import annotations
 
-import json
 import re
-from datetime import date, datetime, timezone
+from datetime import date
 
 BOOK = "Settings/Strategic-Entities.md"
-REQUESTS = "data/StrategicEntities/requested.json"
-
-# The Hermes job that writes and deletes the agents. Its schedule is years out:
-# it exists to be triggered, never to fire by itself.
-JOB = "SB strategic experts"
+SECTION = "customers"
+HUB = "customers-hub"
+# Cloned from the section's own producer rather than `default`: it already has
+# this install's provider and the vault skills, and a profile made from nothing
+# has no `compass` provider at all (this install, 2026-09-18).
+CLONE_FROM = "entity-manager"
 
 HEADER = """# Strategic entities
 
@@ -48,8 +44,7 @@ _SLUG = re.compile(r"[^a-z0-9]+")
 
 
 def expert_id(name: str) -> str:
-    """`strategic-adnoc`. Stable for a given name, so a row and its agent can
-    always find each other."""
+    """`strategic-adnoc`, and the real Hermes profile folder name."""
     slug = _SLUG.sub("-", str(name or "").lower()).strip("-")
     return f"strategic-{slug or 'entity'}"
 
@@ -85,32 +80,87 @@ def _write(api, rows: dict[str, dict]) -> None:
     api.data.write_text(BOOK, HEADER + "\n".join(lines) + "\n")
 
 
-def _ask_the_agent(api, action: str, row: dict) -> dict:
-    """Queue the work and start the job. Queued rather than replaced: adding two
-    entities before the job runs must create both agents."""
-    try:
-        queued = json.loads(api.data.read_text(REQUESTS) or "{}").get("requests") or []
-    except Exception:
-        queued = []
-    request = {"do": action, "entity": row["entity"], "kind": row.get("kind", ""),
-               "expert_id": row["expert_id"], "folder": row.get("folder", ""),
-               "tags": row.get("tags", [])}
-    queued = [q for q in queued if not (q.get("entity") == row["entity"])] + [request]
-    api.data.write_text(REQUESTS, json.dumps({
-        "requests": queued,
-        "asked_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ"),
-    }, indent=2))
-    started, problem = False, ""
-    try:
-        started = bool(api.hermes.run_cron_job(JOB))
-    except Exception as exc:
-        problem = str(exc)
-    return {"agent_started": started, "queued": len(queued),
-            "note": ("The Expert is being written; it answers within a few seconds."
-                     if started and action == "create" else
-                     "The Expert is being deleted." if started else
-                     "Queued. The agent could not be started just now"
-                     + (f" ({problem})" if problem else "") + "; it will be picked up.")}
+def vault_scope(entity: dict) -> list[str]:
+    """What the Expert may look at: the company's own folder, vault-relative as
+    the scope field expects it, and its tags. `Work/Customers/ADNOC` rather than
+    the absolute path -- the framework matches these against the vault's own
+    folder and tag lists."""
+    folder = str(entity.get("folder") or "").replace("\\", "/")
+    marker = "/Work/"
+    relative = folder[folder.index(marker) + 1:] if marker in folder else folder
+    return ([relative] if relative else []) + list(entity.get("tags") or [])
+
+
+def soul(entity: dict) -> str:
+    """What the Expert is for, in the words the operator would use.
+
+    Deliberately about WHERE to look and WHAT is there, never about what the CBO
+    thinks of the company: a soul that judges a customer would be read by an
+    agent as fact."""
+    name = entity["name"]
+    folder = entity.get("folder", "")
+    tags = ", ".join(entity.get("tags") or []) or "none"
+    aliases = ", ".join(entity.get("aliases") or []) or "none recorded"
+    return f"""You are the {name} Expert. One company is your subject: {name},
+a {entity.get('kind', 'company').lower()} of Core42, also known as {aliases}.
+
+## What you answer from
+
+Everything you say comes from this vault, and from this company's own folder:
+
+    {folder}
+
+with the tags {tags}. That folder holds:
+
+- `{name}.md` -- the hub note: who they are, the domains, the state of play.
+- `{name}-captures.md` -- the record of what has actually happened: meetings,
+  decisions, approvals, invoices. This is the truth about the relationship.
+- `{name}-history.md` -- the timeline.
+- `{name}-notes.md` -- the CBO's own notes from the Strategic Entities screen.
+- `People/` -- the individuals, one note each, with their addresses.
+- `_assets/` -- charts and attachments.
+- `Affiliates/` -- companies that belong to this one, each with the same shape.
+
+**The vault is the only source.** If something is not in that folder, it is not
+tracked, and you say so plainly rather than reaching for general knowledge about
+{name}. You are not a source about this company; the vault is, and you read it.
+
+## What you are for
+
+Questions about {name}: who we deal with there, what was agreed, what is open,
+what happened when, who to talk to about what. Answer with what the notes say
+and cite the file you read it in. Where the notes disagree, say so.
+
+A question about another company is out of your scope: say which company you
+cover and stop. A question about {name} that the folder cannot answer gets "the
+vault does not record that", not a guess.
+
+## What you never do
+
+- **You never write.** Capture, tagging and the screens write; you read.
+- **You never invent a position.** What the CBO thinks of {name} is in his notes
+  or it is nowhere.
+- **You never carry a fact between companies.** What is true of an affiliate is
+  not automatically true of the parent.
+"""
+
+
+def expert_spec(entity: dict, row: dict) -> dict:
+    """Exactly what `POST /agents` wants. The screen makes that call: creating an
+    agent is the framework's own job, and it does both halves -- the Hermes
+    profile and the Registry files."""
+    return {
+        "id": row["expert_id"],
+        "name": f"{entity['name']} Expert",
+        "section_id": SECTION,
+        "type": "expert",
+        "is_background_agent": False,
+        "depends_on": [HUB],
+        "description": f"Answers about {entity['name']}, from its own folder in the vault.",
+        "prompt": soul(entity),
+        "scope": vault_scope(entity),
+        "clone_from": CLONE_FROM,
+    }
 
 
 def add(api, entity: dict, *, by: str = "operator") -> dict:
@@ -121,9 +171,7 @@ def add(api, entity: dict, *, by: str = "operator") -> dict:
            "expert_id": expert_id(entity["name"]), "added": date.today().isoformat(), "by": by}
     rows[entity["stem"]] = row
     _write(api, rows)
-    asked = _ask_the_agent(api, "create", {**row, "folder": entity["folder"],
-                                           "tags": entity.get("tags", [])})
-    return {"status": "added", **row, **asked}
+    return {"status": "added", **row, "expert": expert_spec(entity, row)}
 
 
 def remove(api, stem: str) -> dict:
@@ -132,7 +180,7 @@ def remove(api, stem: str) -> dict:
     if row is None:
         return {"status": "not strategic", "entity": stem}
     _write(api, rows)
-    # Removing undoes adding: the Expert goes too (operator, 2026-09-24). The
-    # entity's own notes are never touched -- this list is not the company.
-    asked = _ask_the_agent(api, "delete", row)
-    return {"status": "removed", **row, **asked}
+    # Removing undoes adding: the screen deletes the Expert through the
+    # framework's own API. The entity's own notes are never touched -- this list
+    # is not the company.
+    return {"status": "removed", **row, "delete_expert": row["expert_id"]}

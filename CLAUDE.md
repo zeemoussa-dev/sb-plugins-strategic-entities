@@ -18,12 +18,14 @@ same notes.
 
 - **A plugin imports only `app.plugin_api`.** Reaching past that facade is
   refused at install time, and no framework file may be copied in.
-- **This plugin cannot create an agent or call a model.** `api.agents` only
-  reads, and a plugin cannot find where agents live (framework `REQ-SB-93`).
-  Both are asked of the install's own Hermes jobs: the request goes into a data
-  file this plugin registered, and `api.hermes.run_cron_job` starts the job.
-  When `REQ-SB-93` lands, the Expert half should move to the API and the
-  `SB strategic experts` job should go.
+- **The Expert is the framework's own job.** The screen calls `POST /agents`
+  and `DELETE /agents/{id}`, which handle the Hermes profile and the Registry
+  files together. The backend decides only WHAT the Expert should be. A plugin's
+  backend may import only `plugin_api`; its screen may call the app's API like
+  any other part of the frontend, and confusing the two cost a day's detour.
+- **Tidying a note does need the install's agent**, because a plugin cannot call
+  a model: the note is queued in a registered data file and the
+  `SB strategic notes` job rewrites it.
 - **It writes only two things in the vault**: `<Name>-notes.md`, which it owns,
   and `<Name>-captures.md`, which it edits on the operator's instruction.
   Everything else about a company is somebody else's to write.

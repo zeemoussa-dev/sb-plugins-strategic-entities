@@ -4,6 +4,12 @@ All notable changes to the Strategic Entities plugin.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-24
+
+- change: **the Expert is created through the framework's own `POST /agents`**, and deleted with `DELETE /agents/{id}` (operator, 2026-09-24: "the Plugin can use the API for Creating Agents in the framework"). One call makes the Hermes profile and the Registry files together; the plugin decides what the Expert should be -- its name, section, scope and soul -- and the screen makes the call.
+- fix: the first version asked a Hermes job to write those files by hand, because `api.plugin_api`'s `AgentsApi` only lists Experts. That facade is for a plugin's backend; a plugin's screen may call the app's own API like any other part of the frontend. The job, its launcher and the four scripts behind it are gone, and framework `REQ-SB-93` is withdrawn.
+- fix: an agent written as Registry files alone is invisible. The app lists agents from Hermes profiles, so the half-built Expert from that first attempt never appeared -- which is what the API does properly in one call.
+
 ## [0.1.0] - 2026-09-24
 
 - feat: the plugin's first shape. **Strategic Entities** in the side panel: the short list of companies that matter, searchable across customers, partners, affiliates and opportunities. Adding one writes it to `Settings/Strategic-Entities.md` and asks the install's Hermes job for an **Expert scoped to that company's folder and tags**; removing one asks for that Expert to be deleted. The company's own notes are never touched by either.

@@ -20,11 +20,17 @@ What working on this plugin has taught, beyond what the code says.
 
 ## Constraints
 
-- **[2026-09-24] A plugin cannot create an agent, and cannot find where agents
-  live.** `api.agents` only reads; the data root is in `settings`, not in
-  `os.environ`, so `SECOND_BRAIN_DATA_PATH` is not available either. Logged as
-  framework `REQ-SB-93`. Until it lands, the install's `SB strategic experts` job
-  does the writing and this plugin only asks.
+- **[2026-09-24] A plugin's SCREEN may call the app's own API; only its backend
+  is confined to `plugin_api`.** Creating an agent looked impossible because
+  `plugin_api.AgentsApi` only lists Experts -- but `POST /agents` has always
+  done the whole job, profile and Registry files together, and `apiFetch` will
+  call it. A Hermes job was built on that wrong conclusion and thrown away the
+  same day. **Check the app's API before reporting a capability missing.**
+
+- **[2026-09-24] An agent is a Hermes profile, not a folder.** The app lists
+  agents from `profiles.get_all()`, so Registry files written by hand produce an
+  agent that is correct and invisible. `POST /agents` creates both halves, and
+  `DELETE /agents/{id}` removes both.
 
 - **[2026-09-24] A plugin screen cannot point an `<img>` at the backend.** It is
   handed `apiFetch` and nothing else, so it never learns the API's address. A

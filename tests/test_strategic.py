@@ -141,18 +141,26 @@ def test_a_file_outside_the_folder_cannot_be_asked_for(entities):
 
 # ── the short list ───────────────────────────────────────────────────────
 
-def test_adding_one_writes_the_row_and_asks_for_its_expert(api, entities):
-    """Adding is not a bookmark: it creates an Expert scoped to the company."""
+def test_adding_one_writes_the_row_and_the_expert_to_create(api, entities):
+    """Adding is not a bookmark: the company gets an Expert. The framework
+    creates it -- this says what it should be."""
     result = strategic.add(api, entities.get("ADNOC"))
 
     assert result["status"] == "added"
     assert result["expert_id"] == "strategic-adnoc"
     assert "ADNOC" in api.files[strategic.BOOK]
-    assert api.jobs == [strategic.JOB]
-    asked = json.loads(api.files[strategic.REQUESTS])["requests"][0]
-    assert asked["do"] == "create"
-    assert asked["tags"] == ["entity/adnoc"]
-    assert asked["folder"].endswith("ADNOC")
+    spec = result["expert"]
+    assert (spec["id"], spec["type"], spec["section_id"]) ==         ("strategic-adnoc", "expert", "customers")
+    assert spec["scope"] == ["Work/Customers/ADNOC", "entity/adnoc"],         "its own folder, vault-relative, and its tags"
+    assert "ADNOC" in spec["prompt"] and "never write" in spec["prompt"].lower()
+
+
+def test_the_soul_is_about_where_to_look_not_what_to_think(api, entities):
+    spec = strategic.expert_spec(entities.get("ADNOC"), {"expert_id": "strategic-adnoc"})
+    soul = spec["prompt"]
+    assert "ADNOC-captures.md" in soul and "ADNOC-notes.md" in soul
+    assert "the vault is the only source" in soul.lower()
+    assert "out of your scope" in soul
 
 
 def test_the_book_is_a_table_the_operator_can_read_and_edit(api, entities):
@@ -168,7 +176,7 @@ def test_adding_the_same_one_twice_changes_nothing(api, entities):
     strategic.add(api, entities.get("ADNOC"))
     again = strategic.add(api, entities.get("ADNOC"))
     assert again["status"] == "already strategic"
-    assert len(api.jobs) == 1, "no second Expert asked for"
+    assert "expert" not in again, "no second Expert asked for"
 
 
 def test_removing_one_asks_for_its_expert_to_go_too(api, entities):
@@ -178,8 +186,7 @@ def test_removing_one_asks_for_its_expert_to_go_too(api, entities):
 
     assert result["status"] == "removed"
     assert strategic.read(api) == {}
-    asked = json.loads(api.files[strategic.REQUESTS])["requests"][-1]
-    assert (asked["do"], asked["expert_id"]) == ("delete", "strategic-adnoc")
+    assert result["delete_expert"] == "strategic-adnoc", "the screen deletes it"
 
 
 def test_removing_never_touches_the_company_itself(api, entities, vault):

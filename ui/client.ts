@@ -54,13 +54,41 @@ export function fetchEntity(stem: string): Promise<EntityDetail> {
   return apiFetch<EntityDetail>(`${BASE}/entities/${encodeURIComponent(stem)}`);
 }
 
-/** Adding one creates its Expert; removing one deletes it again. */
-export function makeStrategic(stem: string): Promise<{ note?: string; expert_id: string }> {
+/** What `POST /agents` wants for this company's Expert. The plugin decides what
+ *  it should be; the framework creates it. */
+export interface ExpertSpec {
+  id: string;
+  name: string;
+  section_id: string;
+  type: string;
+  depends_on: string[];
+  description: string;
+  prompt: string;
+  scope: string[];
+  clone_from: string;
+}
+
+export function makeStrategic(stem: string): Promise<{
+  status: string; expert_id: string; expert?: ExpertSpec;
+}> {
   return send(`${BASE}/strategic/${encodeURIComponent(stem)}`, 'POST');
 }
 
-export function dropStrategic(stem: string): Promise<{ note?: string }> {
+export function dropStrategic(stem: string): Promise<{
+  status: string; expert_id?: string; delete_expert?: string;
+}> {
   return send(`${BASE}/strategic/${encodeURIComponent(stem)}`, 'DELETE');
+}
+
+/** The framework's own agents API. Creating an agent is its job -- one call
+ *  makes the Hermes profile and the Registry files together, and the delete
+ *  undoes both. A plugin's screen may call it like any other part of the app. */
+export function createExpert(spec: ExpertSpec): Promise<{ id: string }> {
+  return send('/agents', 'POST', spec);
+}
+
+export function deleteExpert(id: string): Promise<unknown> {
+  return send(`/agents/${encodeURIComponent(id)}`, 'DELETE');
 }
 
 export function saveCaptures(stem: string, text: string): Promise<{ status: string }> {

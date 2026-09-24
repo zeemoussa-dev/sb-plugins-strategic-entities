@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import { ApiError } from '../../pluginHost/api';
 import {
+  createExpert,
+  deleteExpert,
   dropStrategic,
   fetchEntities,
   fetchStrategic,
@@ -25,11 +28,19 @@ function Row({ entity, onChanged }: { entity: Entity; onChanged: () => void }) {
       + `Its Expert (${entity.expert_id ?? 'none'}) is deleted too. `
       + `Nothing in ${entity.name}'s own folder is touched.`)) return;
     setBusy(true);
-    dropStrategic(entity.stem).then((answer) => {
-      setSaid(answer.note ?? '');
-      setBusy(false);
-      onChanged();
-    }, () => setBusy(false));
+    dropStrategic(entity.stem)
+      .then((answer) => (answer.delete_expert
+        // Already gone is not a failure: the row is what the screen owns.
+        ? deleteExpert(answer.delete_expert).catch(() => undefined)
+        : undefined))
+      .then(() => {
+        setSaid('Removed, and its Expert deleted.');
+        setBusy(false);
+        onChanged();
+      }, (error) => {
+        setSaid(error instanceof ApiError ? error.message : String(error));
+        setBusy(false);
+      });
   }
 
   return (
@@ -70,12 +81,22 @@ function AddOne({ onChanged }: { onChanged: () => void }) {
       + `An Expert is created for it, scoped to its folder and tags, and answers `
       + `questions about it in Cockpit.`)) return;
     setBusy(entity.stem);
-    makeStrategic(entity.stem).then(() => {
-      setBusy('');
-      setQuery('');
-      setFound(null);
-      onChanged();
-    }, () => setBusy(''));
+    makeStrategic(entity.stem)
+      // The framework creates the agent: one call makes the Hermes profile and
+      // the Registry files together. A 409 means it is already there, which is
+      // the state we wanted anyway.
+      .then((answer) => (answer.expert
+        ? createExpert(answer.expert).catch((error) => {
+          if (error instanceof ApiError && error.status === 409) return undefined;
+          throw error;
+        })
+        : undefined))
+      .then(() => {
+        setBusy('');
+        setQuery('');
+        setFound(null);
+        onChanged();
+      }, () => setBusy(''));
   }
 
   return (

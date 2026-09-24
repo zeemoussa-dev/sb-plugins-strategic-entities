@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { Flowchart } from './Flowchart';
 
@@ -12,6 +12,9 @@ import { Flowchart } from './Flowchart';
  *  in a vault note that are not CommonMark at all:
  *
  *  - `[[wikilinks]]`, which become in-app links;
+ *  - `![[embeds]]`, which are how a note puts a picture in itself -- 465 of
+ *    them in this vault, every one the company's own profile chart, sitting
+ *    where the note wants it read;
  *  - `> [!abstract] …` callouts, which the capture passes put at the top of
  *    every company note and which would otherwise read as a quote starting with
  *    a bracket.
@@ -19,6 +22,7 @@ import { Flowchart } from './Flowchart';
  *  No raw HTML is ever rendered, the same safe-by-omission rule the rest of the
  *  app keeps: unknown markup shows as the text it is.
  */
+const EMBED = /!\[\[([^\]]+)\]\]/;
 const WIKILINK = /\[\[([^\]]+)\]\]/;
 const LINK = /\[([^\]]*)\]\(([^)]+)\)/;
 const BOLD = /\*\*([^*]+)\*\*/;
@@ -30,12 +34,29 @@ const BULLET = /^\s*[-*+]\s+(.*)$/;
 const NUMBERED = /^\s*\d+[.)]\s+(.*)$/;
 const TABLE_DIVIDER = /^\s*\|?[\s:|-]+\|[\s:|-]*$/;
 
+/** How the page draws what a note embeds. A note says `![[ADNOC-profile.svg]]`;
+ *  only the page knows how to fetch a file out of the vault, so it passes a
+ *  renderer down and this file just says where the picture goes. Without one,
+ *  an embed falls back to a link to the file -- never to nothing. */
+export type EmbedRenderer = (target: string) => ReactNode;
+const Embedding = createContext<EmbedRenderer | undefined>(undefined);
+
+function Embedded({ target }: { target: string }) {
+  const draw = useContext(Embedding);
+  const drawn = draw?.(target);
+  if (drawn) return <>{drawn}</>;
+  return <Link to={`/browse/${encodeURIComponent(target)}`}>{target}</Link>;
+}
+
 /** Emphasis, code, links and wikilinks, innermost first. Returns React nodes,
  *  never HTML: a note is text from the vault and is treated as such. */
 function inline(text: string, key = 0): ReactNode[] {
   if (!text) return [];
   for (const [pattern, render] of [
     [CODE, (m: RegExpExecArray) => <code key={key}>{m[1]}</code>],
+    // Before the wikilink: `![[x]]` and `[[x]]` differ by one character, and
+    // matched the other way round an embed reads as "!" followed by a link.
+    [EMBED, (m: RegExpExecArray) => <Embedded key={key} target={m[1].split('|')[0].trim()} />],
     [BOLD, (m: RegExpExecArray) => <strong key={key}>{inline(m[1], key + 1)}</strong>],
     [WIKILINK, (m: RegExpExecArray) => {
       const [target, alias] = m[1].split('|');
@@ -88,10 +109,26 @@ function Table({ rows }: { rows: string[] }) {
   );
 }
 
-export function Markdown({ children }: { children: string }) {
+export function Markdown({ children, embed }: { children: string; embed?: EmbedRenderer }) {
   const blocks = useMemo(() => parse(children || ''), [children]);
   if (!blocks.length) return null;
-  return <div className="md">{blocks}</div>;
+  return (
+    <Embedding.Provider value={embed}>
+      <div className="md">{blocks}</div>
+    </Embedding.Provider>
+  );
+}
+
+/** What a note embeds, in the order it embeds it -- so a page can tell which
+ *  of an entity's files the note already shows and which it has never
+ *  mentioned. */
+export function embedsIn(text: string): string[] {
+  const found: string[] = [];
+  for (const match of (text || '').matchAll(/!\[\[([^\]]+)\]\]/g)) {
+    const target = match[1].split('|')[0].trim();
+    if (target && !found.includes(target)) found.push(target);
+  }
+  return found;
 }
 
 function parse(text: string): ReactNode[] {
@@ -110,6 +147,15 @@ function parse(text: string): ReactNode[] {
     const line = lines[i];
 
     if (!line.trim()) { flush(); continue; }
+
+    // An embed on a line of its own is a block, not a word in a sentence: a
+    // chart nested inside a paragraph is invalid markup and lays out badly.
+    const alone = /^!\[\[([^\]]+)\]\]$/.exec(line.trim());
+    if (alone) {
+      flush();
+      out.push(<Embedded key={out.length} target={alone[1].split('|')[0].trim()} />);
+      continue;
+    }
 
     if (line.startsWith('```')) {
       flush();

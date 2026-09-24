@@ -4,6 +4,11 @@ All notable changes to the Strategic Entities plugin.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-24
+
+- feat: **the charts are in the note, not in a tab** (operator, 2026-09-24: "I need as well charts to be rendered inline this should not be separete tab"). Every company note embeds its own profile chart with `![[ADNOC-profile.svg]]` -- 465 of them in this vault -- and the renderer read that as an exclamation mark followed by a link, so the picture the note was written around ended up in a tab of its own. An embed now draws the chart where the note puts it, and the **Charts** tab is gone.
+- feat: an embed that is not a chart of this company stays a link to the file rather than becoming a broken image, and a picture in `_assets` that no note mentions is still shown, under the note -- nothing in the folder goes unseen.
+
 ## [0.4.1] - 2026-09-24
 
 - fix: a dotted link is still a link. ADNOC's affiliates hang off `n0 -.- AFFS`, and the first version matched only `-->`, `---`, `===` and `-.->` -- so the whole **Affiliates / JVs / partners** group silently vanished from the drawing. Any run of mermaid's link characters counts now (`-.-`, `==>`, `--o`, `--x` and the rest); only the invisible `~~~` is still ignored, because it forces layout rather than claiming a relationship.

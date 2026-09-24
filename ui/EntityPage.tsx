@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiError } from '../../pluginHost/api';
-import { Markdown } from './Markdown';
+import { Markdown, embedsIn, type EmbedRenderer } from './Markdown';
 import {
   addNote,
   fetchChart,
@@ -25,7 +25,7 @@ function reason(error: unknown): string {
 /** A chart, drawn. The vault is not on the web, so the picture comes through
  *  the backend: an SVG as text to put straight into the page, anything else as
  *  a data URL. */
-function ChartCard({ stem, file }: { stem: string; file: string }) {
+function ChartCard({ stem, file, caption = true }: { stem: string; file: string; caption?: boolean }) {
   const [chart, setChart] = useState<Chart | null>(null);
   const [failed, setFailed] = useState('');
 
@@ -35,7 +35,7 @@ function ChartCard({ stem, file }: { stem: string; file: string }) {
 
   return (
     <figure className="entity-chart">
-      <figcaption className="text-muted">{file}</figcaption>
+      {caption && <figcaption className="text-muted">{file}</figcaption>}
       {failed && <p className="text-warning">{failed}</p>}
       {chart?.svg && (
         <div className="entity-chart-svg" dangerouslySetInnerHTML={{ __html: chart.svg }} />
@@ -44,6 +44,17 @@ function ChartCard({ stem, file }: { stem: string; file: string }) {
       {!chart && !failed && <p className="text-muted">Loading…</p>}
     </figure>
   );
+}
+
+/** Draws what a note embeds: `![[ADNOC-profile.svg]]` becomes the chart, in the
+ *  paragraph the note put it in. Only a file that is really in the entity's
+ *  folder is drawn -- anything else the note mentions stays a link, because a
+ *  missing picture should read as a missing note, not as a broken image. */
+function chartsOf(entity: EntityDetail): EmbedRenderer {
+  const charts = entity.contents.charts.map((chart) => chart.file);
+  return (target) => (charts.includes(target)
+    ? <ChartCard stem={entity.stem} file={target} caption={false} />
+    : null);
 }
 
 /** The captures are the vault's record of what happened, and they can be wrong
@@ -80,7 +91,7 @@ function Captures({ entity, onSaved }: { entity: EntityDetail; onSaved: () => vo
           <button type="button" className="btn" onClick={() => setEditing(true)}>Edit</button>
           <span className="text-muted">{entity.contents.captures}</span>
         </div>
-        <Markdown>{entity.captures}</Markdown>
+        <Markdown embed={chartsOf(entity)}>{entity.captures}</Markdown>
       </>
     );
   }
@@ -92,7 +103,7 @@ function Captures({ entity, onSaved }: { entity: EntityDetail; onSaved: () => vo
                   onChange={(event) => { setText(event.target.value); setState('idle'); }} />
         <div className="entity-preview">
           <span className="text-muted">Preview</span>
-          <Markdown>{text}</Markdown>
+          <Markdown embed={chartsOf(entity)}>{text}</Markdown>
         </div>
       </div>
       {error && <p className="text-warning">{error}</p>}
@@ -112,16 +123,16 @@ function Captures({ entity, onSaved }: { entity: EntityDetail; onSaved: () => vo
 /** A note the agent tidied keeps what was typed in a `<details>` block, which is
  *  raw HTML and deliberately not rendered as such. Split here instead: the
  *  tidied prose reads as prose, and the original is one click away. */
-function WrittenNotes({ text }: { text: string }) {
+function WrittenNotes({ text, embed }: { text: string; embed: EmbedRenderer }) {
   const parts = text.split(/<details><summary>as typed<\/summary>|<\/details>/);
-  if (parts.length < 2) return <Markdown>{text}</Markdown>;
+  if (parts.length < 2) return <Markdown embed={embed}>{text}</Markdown>;
   const [tidied, original, ...rest] = parts;
   return (
     <>
-      <Markdown>{tidied + rest.join('')}</Markdown>
+      <Markdown embed={embed}>{tidied + rest.join('')}</Markdown>
       <details className="entity-as-typed">
         <summary>as you typed it</summary>
-        <Markdown>{original}</Markdown>
+        <Markdown embed={embed}>{original}</Markdown>
       </details>
     </>
   );
@@ -149,7 +160,9 @@ function Notes({ entity, onSaved }: { entity: EntityDetail; onSaved: () => void 
 
   return (
     <>
-      {entity.notes ? <WrittenNotes text={entity.notes} /> : <p className="text-muted">No notes yet.</p>}
+      {entity.notes
+        ? <WrittenNotes text={entity.notes} embed={chartsOf(entity)} />
+        : <p className="text-muted">No notes yet.</p>}
       <form className="entity-note-form" onSubmit={save}>
         <textarea className="input" rows={4} value={text}
                   placeholder="What you want remembered about this company"
@@ -165,7 +178,7 @@ function Notes({ entity, onSaved }: { entity: EntityDetail; onSaved: () => void 
   );
 }
 
-const TABS = ['Overview', 'Charts', 'Captures', 'Notes', 'People'] as const;
+const TABS = ['Overview', 'Captures', 'Notes', 'People'] as const;
 
 export function EntityPage() {
   const { stem = '' } = useParams<{ stem: string }>();
@@ -189,6 +202,8 @@ export function EntityPage() {
   if (!entity) return <>{back}<p className="text-muted">Loading…</p></>;
 
   const { contents } = entity;
+  const shown = embedsIn(entity.note);
+  const unshown = contents.charts.filter((chart) => !shown.includes(chart.file));
   return (
     <>
       {back}
@@ -215,7 +230,6 @@ export function EntityPage() {
                   className={tab === name ? 'is-selected' : undefined}
                   onClick={() => setTab(name)}>
             {name}
-            {name === 'Charts' && contents.charts.length ? ` (${contents.charts.length})` : ''}
             {name === 'People' && contents.people.length ? ` (${contents.people.length})` : ''}
           </button>
         ))}
@@ -223,16 +237,17 @@ export function EntityPage() {
 
       <div className="card">
         {tab === 'Overview' && (
-          entity.note.trim()
-            ? <Markdown>{entity.note}</Markdown>
-            : <p className="text-muted">The hub note is empty.</p>
-        )}
-        {tab === 'Charts' && (
-          contents.charts.length
-            ? contents.charts.map((chart) => (
+          <>
+            {entity.note.trim()
+              ? <Markdown embed={chartsOf(entity)}>{entity.note}</Markdown>
+              : <p className="text-muted">The hub note is empty.</p>}
+            {/* The note draws the charts it embeds, where it embeds them. Any
+                other picture in _assets still belongs to this company and is
+                shown after it rather than nowhere. */}
+            {unshown.map((chart) => (
               <ChartCard key={chart.file} stem={entity.stem} file={chart.file} />
-            ))
-            : <p className="text-muted">No charts in this company&apos;s assets.</p>
+            ))}
+          </>
         )}
         {tab === 'Captures' && <Captures entity={entity} onSaved={load} />}
         {tab === 'Notes' && <Notes entity={entity} onSaved={load} />}

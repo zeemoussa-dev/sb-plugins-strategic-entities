@@ -4,6 +4,10 @@ All notable changes to the Strategic Entities plugin.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-24
+
+- fix: a dotted link is still a link. ADNOC's affiliates hang off `n0 -.- AFFS`, and the first version matched only `-->`, `---`, `===` and `-.->` -- so the whole **Affiliates / JVs / partners** group silently vanished from the drawing. Any run of mermaid's link characters counts now (`-.-`, `==>`, `--o`, `--x` and the rest); only the invisible `~~~` is still ignored, because it forces layout rather than claiming a relationship.
+
 ## [0.4.0] - 2026-09-24
 
 - feat: **the group structure is drawn** (operator, 2026-09-24: "Group Structure in Adnoc in strategic Entities is not rendered"). Every company note carries a mermaid `flowchart TD` -- 337 of them in this vault -- and nothing in the app renders mermaid: there is no such dependency, and a plugin's screens may import only react, react-router and `pluginHost`. So the plugin reads the small dialect those notes use (nodes, arrows, `subgraph` groups) and lays it out top-down: what owns the company, the company itself, then the groups hanging off it. Mermaid's invisible `~~~` links are ignored rather than drawn as relationships the note never claimed.

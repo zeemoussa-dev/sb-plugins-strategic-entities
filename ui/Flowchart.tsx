@@ -19,7 +19,11 @@ import { useMemo, useState } from 'react';
  *  loses an edge would be worse than the code fence it replaced.
  */
 const NODE = /^\s*([A-Za-z_][\w-]*)\s*(?:\[\s*"?([^"\]]*)"?\s*\]|\(\s*"?([^")]*)"?\s*\)|\{\s*"?([^"}]*)"?\s*\})\s*(:::[\w-]+)?\s*$/;
-const EDGE = /^\s*([A-Za-z_][\w-]*)\s*(-->|---|===|~~~|-\.->)\s*(?:\|\s*([^|]*)\s*\|\s*)?([A-Za-z_][\w-]*)\s*$/;
+// Mermaid writes a link a dozen ways -- `-->`, `---`, `-.-`, `-.->`, `==>`,
+// `--o`, `--x`, `~~~` -- and ADNOC's own affiliates hang off a dotted `-.-`,
+// which a pattern listing only the arrows missed entirely. Any run of link
+// characters counts; what it MEANS is decided below.
+const EDGE = /^\s*([A-Za-z_][\w-]*)\s*([-=.~]{2,}[>ox]?)\s*(?:\|\s*([^|]*)\s*\|\s*)?([A-Za-z_][\w-]*)\s*$/;
 const SUBGRAPH = /^\s*subgraph\s+([A-Za-z_][\w-]*)\s*(?:\[\s*"?([^"\]]*)"?\s*\])?\s*$/;
 
 interface Node { id: string; label: string; self: boolean; group?: string }
@@ -78,7 +82,7 @@ function parse(source: string) {
       noteNode(to);
       // `~~~` is mermaid's invisible link -- it only forces layout, and drawing
       // it would invent a relationship the note does not claim.
-      if (kind !== "~~~") edges.push({ from, to, label: (label ?? "").trim() });
+      if (!kind.startsWith("~")) edges.push({ from, to, label: (label ?? "").trim() });
       continue;
     }
 

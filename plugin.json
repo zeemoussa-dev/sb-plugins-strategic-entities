@@ -2,7 +2,7 @@
   "id": "strategic-entities",
   "name": "Strategic Entities",
   "description": "The companies that matter, each with its own Expert. Adding one creates an Expert scoped to that company's folder and tags; opening one shows everything the vault holds on it, with its captures editable and room for your own notes.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "framework_api": 3,
   "requires": []
 }

@@ -4,6 +4,12 @@ All notable changes to the Strategic Entities plugin.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-24
+
+- change: notes, captures and the hub note are **rendered as documents**, not dumped as text (operator, 2026-09-24: "The Rendering looks really bad for both editing and Viewing"). `react-markdown` + `remark-gfm`, the host's own dependencies and its own approach in the vault browser, with headings, tables, lists and code styled to match the app. `[[wikilinks]]` become in-app links and `> [!abstract]` callouts become labelled blocks -- both are Obsidian syntax that CommonMark renders as punctuation.
+- change: editing the captures is a **mode with a live preview beside it**, not a permanent textarea. Reading is the default, because that tab is mostly read; **Edit** opens the two-column view and **Discard** leaves it. Raw HTML is still never rendered.
+- change: a tidied note shows the agent's prose, with **as you typed it** collapsed underneath rather than the raw `<details>` markup running through the page.
+
 ## [0.2.0] - 2026-09-24
 
 - change: **the Expert is created through the framework's own `POST /agents`**, and deleted with `DELETE /agents/{id}` (operator, 2026-09-24: "the Plugin can use the API for Creating Agents in the framework"). One call makes the Hermes profile and the Registry files together; the plugin decides what the Expert should be -- its name, section, scope and soul -- and the screen makes the call.

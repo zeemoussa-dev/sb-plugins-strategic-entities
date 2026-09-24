@@ -61,12 +61,100 @@
   height: auto;
 }
 
-.entity-note,
-.entity-notes {
-  white-space: pre-wrap;
-  font-family: inherit;
-  margin: 0;
+/* A note, as a document. The app's own note view reads this way; a company's
+   page should not read worse than the note behind it. */
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+
+.md h1, .md h2, .md h3, .md h4 {
+  margin: var(--space-4) 0 var(--space-2);
+  line-height: 1.25;
 }
+
+.md h1 { font-size: var(--font-size-lg); }
+.md h2 { font-size: var(--font-size-base); }
+.md h3, .md h4 { font-size: var(--font-size-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); }
+
+.md p, .md ul, .md ol, .md table, .md pre, .md blockquote {
+  margin: 0 0 var(--space-3);
+}
+
+.md ul, .md ol { padding-left: var(--space-4); }
+.md li { margin-bottom: var(--space-1); }
+
+.md blockquote {
+  margin-left: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-border);
+  background: var(--color-surface-2, transparent);
+}
+
+.md table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--font-size-sm);
+}
+
+.md th, .md td {
+  border: 1px solid var(--color-border);
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  vertical-align: top;
+}
+
+.md th { background: var(--color-surface-2, transparent); }
+
+.md code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+  padding: 0 0.2em;
+}
+
+.md pre {
+  padding: var(--space-2);
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+}
+
+.md pre code { padding: 0; }
+
+.md hr { border: none; border-top: 1px solid var(--color-border); margin: var(--space-4) 0; }
+
+/* Editing beside the result: markdown is only readable as markdown to the
+   person who wrote it. */
+.entity-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+@media (max-width: 60rem) {
+  .entity-split { grid-template-columns: 1fr; }
+}
+
+.entity-preview {
+  max-height: 34rem;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+}
+
+.entity-preview > .text-muted {
+  display: block;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-2);
+}
+
+.entity-as-typed {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.entity-as-typed summary { cursor: pointer; }
 
 .entity-editor {
   width: 100%;

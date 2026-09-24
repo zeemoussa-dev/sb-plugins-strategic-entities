@@ -18,6 +18,8 @@ What working on this plugin has taught, beyond what the code says.
   happened. The screen can correct one, because the reader is the person who
   notices it is wrong, and it is saved exactly as given.
 
+- **[2026-09-24] Rendering is not optional.** A company's page showing `## Summary` and `> [!abstract]` as literal text reads worse than the note behind it. The host already depends on `react-markdown`, `remark-gfm` and `rehype-slug`, and its own vault browser uses them -- so does this plugin, rather than a second renderer or a new dependency in the host's `package.json`, which is not this repository's to change.
+
 ## Constraints
 
 - **[2026-09-24] A plugin's SCREEN may call the app's own API; only its backend

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiError } from '../../pluginHost/api';
+import { Markdown } from './Markdown';
 import {
   addNote,
   fetchChart,
@@ -51,6 +52,7 @@ function ChartCard({ stem, file }: { stem: string; file: string }) {
 function Captures({ entity, onSaved }: { entity: EntityDetail; onSaved: () => void }) {
   const [text, setText] = useState(entity.captures);
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState('');
   const changed = text !== entity.captures;
 
@@ -60,6 +62,7 @@ function Captures({ entity, onSaved }: { entity: EntityDetail; onSaved: () => vo
     setError('');
     saveCaptures(entity.stem, text).then(() => {
       setState('saved');
+      setEditing(false);
       onSaved();
     }, (e) => { setError(reason(e)); setState('idle'); });
   }
@@ -68,19 +71,59 @@ function Captures({ entity, onSaved }: { entity: EntityDetail; onSaved: () => vo
     return <p className="text-muted">Nothing captured for {entity.name} yet.</p>;
   }
 
+  // Reading is what this tab is mostly for; editing is a mode you enter, so the
+  // record reads as a record rather than as a form.
+  if (!editing) {
+    return (
+      <>
+        <div className="entity-editor-actions">
+          <button type="button" className="btn" onClick={() => setEditing(true)}>Edit</button>
+          <span className="text-muted">{entity.contents.captures}</span>
+        </div>
+        <Markdown>{entity.captures}</Markdown>
+      </>
+    );
+  }
+
   return (
     <form onSubmit={save}>
-      <textarea className="input entity-editor" value={text} rows={18}
-                onChange={(event) => { setText(event.target.value); setState('idle'); }} />
+      <div className="entity-split">
+        <textarea className="input entity-editor" value={text} rows={22}
+                  onChange={(event) => { setText(event.target.value); setState('idle'); }} />
+        <div className="entity-preview">
+          <span className="text-muted">Preview</span>
+          <Markdown>{text}</Markdown>
+        </div>
+      </div>
       {error && <p className="text-warning">{error}</p>}
       <div className="entity-editor-actions">
         <button className="btn btn-primary" type="submit" disabled={!changed || state === 'saving'}>
           {state === 'saving' ? 'Saving…' : 'Save captures'}
         </button>
+        <button type="button" className="btn" onClick={() => { setText(entity.captures); setEditing(false); }}>
+          {changed ? 'Discard' : 'Done'}
+        </button>
         {state === 'saved' && <span className="text-muted">Saved as given.</span>}
-        <span className="text-muted">{entity.contents.captures}</span>
       </div>
     </form>
+  );
+}
+
+/** A note the agent tidied keeps what was typed in a `<details>` block, which is
+ *  raw HTML and deliberately not rendered as such. Split here instead: the
+ *  tidied prose reads as prose, and the original is one click away. */
+function WrittenNotes({ text }: { text: string }) {
+  const parts = text.split(/<details><summary>as typed<\/summary>|<\/details>/);
+  if (parts.length < 2) return <Markdown>{text}</Markdown>;
+  const [tidied, original, ...rest] = parts;
+  return (
+    <>
+      <Markdown>{tidied + rest.join('')}</Markdown>
+      <details className="entity-as-typed">
+        <summary>as you typed it</summary>
+        <Markdown>{original}</Markdown>
+      </details>
+    </>
   );
 }
 
@@ -106,9 +149,7 @@ function Notes({ entity, onSaved }: { entity: EntityDetail; onSaved: () => void 
 
   return (
     <>
-      {entity.notes
-        ? <pre className="entity-notes">{entity.notes}</pre>
-        : <p className="text-muted">No notes yet.</p>}
+      {entity.notes ? <WrittenNotes text={entity.notes} /> : <p className="text-muted">No notes yet.</p>}
       <form className="entity-note-form" onSubmit={save}>
         <textarea className="input" rows={4} value={text}
                   placeholder="What you want remembered about this company"
@@ -183,7 +224,7 @@ export function EntityPage() {
       <div className="card">
         {tab === 'Overview' && (
           entity.note.trim()
-            ? <pre className="entity-note">{entity.note}</pre>
+            ? <Markdown>{entity.note}</Markdown>
             : <p className="text-muted">The hub note is empty.</p>
         )}
         {tab === 'Charts' && (

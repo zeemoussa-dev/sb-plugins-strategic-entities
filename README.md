@@ -15,10 +15,13 @@ This plugin installs from this repository (`ADR-024`):
     POST /marketplace/source/install
     {"kind": "git", "location": "https://github.com/zeemoussa-dev/sb-plugins-strategic-entities", "ref": "main"}
 
-It needs `framework_api` 3 (Second Brain 0.5.0 or later), and the install's own
-`SB strategic experts` and `SB strategic notes` jobs, which live in the agent
-repository: a plugin can neither create an agent nor call a model
-(framework `REQ-SB-93`).
+It needs `framework_api` 3 (Second Brain 0.5.0 or later). The Expert a strategic
+company is given is the framework's own `POST /agents`, which the screen calls
+directly. Tidying a note is the install's `SB strategic notes` job, in the agent
+repository, because a plugin cannot call a model itself.
+
+A note's mermaid diagram is drawn by the plugin's own small renderer: the app has
+no mermaid (framework `REQ-SB-94`), and this deletes itself the day it does.
 
 ## Tests
 

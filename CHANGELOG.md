@@ -4,6 +4,11 @@ All notable changes to the Strategic Entities plugin.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-24
+
+- feat: **the group structure is drawn** (operator, 2026-09-24: "Group Structure in Adnoc in strategic Entities is not rendered"). Every company note carries a mermaid `flowchart TD` -- 337 of them in this vault -- and nothing in the app renders mermaid: there is no such dependency, and a plugin's screens may import only react, react-router and `pluginHost`. So the plugin reads the small dialect those notes use (nodes, arrows, `subgraph` groups) and lays it out top-down: what owns the company, the company itself, then the groups hanging off it. Mermaid's invisible `~~~` links are ignored rather than drawn as relationships the note never claimed.
+- feat: nothing is lost to the drawing. An edge it cannot place appears under **Other relations**, a diagram with no marked centre falls back to its source, and **Show the diagram source** is always there.
+
 ## [0.3.1] - 2026-09-24
 
 - fix: the captures no longer open with their own frontmatter. `type: "Captures"`, `parent`, `tags` are the note's machinery, not the record; they are hidden on screen and written back untouched when he saves, so correcting a capture cannot break the note.

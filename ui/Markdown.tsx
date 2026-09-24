@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { Flowchart } from './Flowchart';
 
 /** A note, rendered as the reader expects rather than as a wall of `##`.
  *
@@ -112,10 +113,16 @@ function parse(text: string): ReactNode[] {
 
     if (line.startsWith('```')) {
       flush();
+      const language = line.slice(3).trim().toLowerCase();
       const code: string[] = [];
       i += 1;
       while (i < lines.length && !lines[i].startsWith('```')) { code.push(lines[i]); i += 1; }
-      out.push(<pre key={out.length}><code>{code.join('\n')}</code></pre>);
+      const body = code.join('\n');
+      // Every company note carries a mermaid `flowchart TD` of the group
+      // structure, and as a code fence it is thirty lines of `n4["..."]`.
+      out.push(language === 'mermaid'
+        ? <Flowchart key={out.length} source={body} />
+        : <pre key={out.length}><code>{body}</code></pre>);
       continue;
     }
 

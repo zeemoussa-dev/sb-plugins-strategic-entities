@@ -195,3 +195,101 @@
   color: var(--color-text-muted);
   margin-bottom: var(--space-1);
 }
+
+/* A group structure, drawn. Top-down, the way the diagram reads: what owns the
+   company, the company, then what hangs off it. */
+.fc {
+  margin: 0 0 var(--space-3);
+  text-align: center;
+}
+
+.fc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.fc-arrow {
+  color: var(--color-text-muted);
+  line-height: 1;
+  margin: var(--space-1) 0;
+}
+
+.fc-node {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--font-size-sm);
+  text-align: left;
+}
+
+/* The company whose page this is. */
+.fc-self {
+  border-color: currentColor;
+  font-weight: 600;
+}
+
+.fc-node-sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.fc-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.fc-group {
+  flex: 1 1 18rem;
+  min-width: 14rem;
+  padding: var(--space-2);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+}
+
+.fc-group-title {
+  display: block;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.fc-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  justify-content: center;
+}
+
+.fc-others {
+  margin-top: var(--space-3);
+  text-align: left;
+  font-size: var(--font-size-sm);
+}
+
+.fc-others ul { margin: 0; padding-left: var(--space-4); }
+
+.fc-toggle {
+  margin-top: var(--space-2);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+}
+
+.fc-source {
+  text-align: left;
+  margin-top: var(--space-2);
+}

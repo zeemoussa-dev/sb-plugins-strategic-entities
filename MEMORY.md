@@ -22,6 +22,8 @@ What working on this plugin has taught, beyond what the code says.
 
 - **[2026-09-24] Rendering is not optional.** A company's page showing `## Summary` and `> [!abstract]` as literal text reads worse than the note behind it.
 
+- **[2026-09-24] The vault's diagrams are mermaid, and nothing in the app draws them.** 337 company notes carry a `flowchart TD`; there is no mermaid dependency and no renderer anywhere, so the vault browser shows them as code too. This plugin draws the subset those notes use. If mermaid ever arrives in the host, `Flowchart.tsx` is what to delete.
+
 ## Constraints
 
 - **[2026-09-24] A plugin's SCREEN may call the app's own API; only its backend

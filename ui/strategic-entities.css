@@ -1,0 +1,97 @@
+/* Strategic Entities' own layout. The list vocabulary it renders with
+   (.item-list, .item-row, .card, .badge, .empty-state, .btn, .input) belongs to
+   the framework. */
+
+.strategic-add {
+  margin-bottom: var(--space-3);
+}
+
+.strategic-add h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-base);
+}
+
+.strategic-add .input {
+  width: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.entity-counts {
+  margin: var(--space-2) 0;
+}
+
+/* The entity's own faces. Lighter than the app's own tabs: this switches what
+   part of one company you are looking at, not which screen you are on. */
+.entity-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.entity-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.entity-tabs button.is-selected {
+  border-bottom-color: currentColor;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* A chart is the point of its card: let it use the width it needs. */
+.entity-chart {
+  margin: 0 0 var(--space-4);
+}
+
+.entity-chart figcaption {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-1);
+}
+
+.entity-chart-svg svg,
+.entity-chart img {
+  max-width: 100%;
+  height: auto;
+}
+
+.entity-note,
+.entity-notes {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+}
+
+.entity-editor {
+  width: 100%;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-sm);
+}
+
+.entity-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.entity-note-form {
+  margin-top: var(--space-3);
+}
+
+.entity-note-form .input {
+  width: 100%;
+}
+
+.entity-people {
+  margin: 0;
+  padding-left: var(--space-4);
+  columns: 2;
+}

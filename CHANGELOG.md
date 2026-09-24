@@ -2,6 +2,13 @@
 
 All notable changes to the Strategic Entities plugin.
 
+## [0.6.0] - 2026-09-25
+
+- feat: **the plugin stopped writing its own renderer**. Second Brain 0.7.0 put `NoteText` in the host contract (framework `BUG-078`, raised from here), so a note, its headings, its wikilinks and its `flowchart TD` now render through the same component the vault browser uses. `Markdown.tsx` and `Flowchart.tsx` are deleted -- 380 lines that existed only because a screen could import neither the renderer nor mermaid, and that had begun to draw the same file differently from the rest of the app. ADNOC's group structure is real mermaid on this screen now.
+- feat: a wikilink in a company's text links to the note when the note is really here, and reads as plain text when it is not -- the detail response says which targets resolve (`resolved_stems`), because the host renderer refuses to invent a link the vault cannot honour.
+- keep: the company's own chart still draws where the note embeds it. A vault file is not something markdown can fetch -- a screen has `apiFetch` and no address -- so the text is split at those lines and the picture comes through this plugin's route.
+- chore: `framework_api` 4.
+
 ## [Unreleased]
 
 ## [0.5.0] - 2026-09-24

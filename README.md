@@ -20,8 +20,10 @@ company is given is the framework's own `POST /agents`, which the screen calls
 directly. Tidying a note is the install's `SB strategic notes` job, in the agent
 repository, because a plugin cannot call a model itself.
 
-A note's mermaid diagram is drawn by the plugin's own small renderer: the app has
-no mermaid (framework `REQ-SB-94`), and this deletes itself the day it does.
+A note is rendered through `pluginHost/noteText` -- the same component the vault
+browser uses, diagrams included (framework `BUG-078`, fixed in 0.7.0). The plugin
+draws only the entity's own charts, which are vault files rather than anything
+markdown can fetch.
 
 ## Tests
 

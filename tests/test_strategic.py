@@ -139,6 +139,14 @@ def test_a_file_outside_the_folder_cannot_be_asked_for(entities):
         entities.read_file(entities.get("ADNOC"), "../NVIDIA/NVIDIA.md")
 
 
+def test_only_wikilinks_that_are_really_notes_are_offered_as_links(entities):
+    """The host renderer links a wikilink only when told the target exists, so
+    the screen has to say which ones do. A link to a note that is not here
+    should read as text rather than lead nowhere."""
+    text = "See [[NVIDIA]] and [[Someone Who Left|Sam]] and [[NVIDIA]] again."
+    assert entities.resolved_stems(text) == ["NVIDIA"]
+
+
 # ── the short list ───────────────────────────────────────────────────────
 
 def test_adding_one_writes_the_row_and_the_expert_to_create(api, entities):

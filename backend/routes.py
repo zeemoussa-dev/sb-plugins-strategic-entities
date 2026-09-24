@@ -67,6 +67,8 @@ def build_router(entities: Entities, api) -> APIRouter:
         entity = _entity(stem)
         chosen = strategic.read(api)
         frontmatter, body = api.vault.read_note(entity["note_path"])
+        captures = writing.read_captures(entity)
+        notes = writing.read_notes(entity)
         return {
             **entity,
             "strategic": stem in chosen,
@@ -75,8 +77,9 @@ def build_router(entities: Entities, api) -> APIRouter:
             "facts": {k: v for k, v in (frontmatter or {}).items()
                       if k not in ("type", "name", "aliases", "domain", "tags")},
             "contents": entities.contents(entity),
-            "captures": writing.read_captures(entity),
-            "notes": writing.read_notes(entity),
+            "captures": captures,
+            "notes": notes,
+            "resolved_stems": entities.resolved_stems(body, captures, notes),
         }
 
     @router.get("/entities/{stem}/files/{filename}")

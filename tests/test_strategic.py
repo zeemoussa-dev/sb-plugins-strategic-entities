@@ -244,3 +244,21 @@ def test_notes_live_with_the_company_not_in_the_plugin(api, entities, vault):
     Expert scoped to that folder can read them."""
     writing.add_note(api, entities.get("ADNOC"), "first note")
     assert (vault / "Work" / "Customers" / "ADNOC" / "ADNOC-notes.md").is_file()
+
+
+def test_the_captures_frontmatter_is_hidden_and_kept(api, entities, vault):
+    """`type: "Captures"` above the record is noise on screen, and editing it by
+    hand is a way to break the note."""
+    path = vault / "Work" / "Customers" / "ADNOC" / "ADNOC-captures.md"
+    path.write_text('---\ntype: "Captures"\nparent: "ADNOC"\n---\n\n'
+                    "## 2026-09-01\n\nThey asked for a proposal.\n", encoding="utf-8")
+    adnoc = entities.get("ADNOC")
+
+    shown = writing.read_captures(adnoc)
+    assert shown.startswith("## 2026-09-01"), "the frontmatter is not on screen"
+
+    writing.save_captures(adnoc, shown + "\n\n## 2026-09-20\n\nAnd again.\n")
+
+    saved = path.read_text(encoding="utf-8")
+    assert saved.startswith('---\ntype: "Captures"\nparent: "ADNOC"\n---'), "and it is still there"
+    assert "And again." in saved

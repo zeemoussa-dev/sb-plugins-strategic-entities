@@ -82,10 +82,26 @@ def add_note(api, entity: dict, text: str, *, tidy: bool = True) -> dict:
                      if started else "Saved as typed. The agent will tidy it when it next runs.")}
 
 
+def _split_frontmatter(text: str) -> tuple[str, str]:
+    """`(frontmatter block, body)`. The block is the note's own machinery --
+    type, tags, parent -- and belongs to whatever wrote it, not on the screen."""
+    if not text.startswith("---\n"):
+        return "", text
+    end = text.find("\n---\n", 4)
+    if end == -1:
+        return "", text
+    return text[:end + 5], text[end + 5:]
+
+
 def read_captures(entity: dict) -> str:
+    """What was captured, without the frontmatter. Showing `type: "Captures"`
+    above the record is noise, and editing it by hand is a way to break the
+    note; `save_captures` puts it back untouched."""
     folder = Path(entity["folder"])
     path = folder / f"{folder.name}-captures.md"
-    return path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
+    if not path.is_file():
+        return ""
+    return _split_frontmatter(path.read_text(encoding="utf-8", errors="replace"))[1].strip()
 
 
 def save_captures(entity: dict, text: str) -> dict:
@@ -97,5 +113,8 @@ def save_captures(entity: dict, text: str) -> dict:
         raise FileNotFoundError(f"{entity['name']} has no captures file to edit")
     if not str(text or "").strip():
         raise ValueError("refusing to empty the captures file")
-    path.write_text(str(text).rstrip("\n") + "\n", encoding="utf-8")
+    # The frontmatter the screen never showed him is put back exactly as it was:
+    # he corrects the record, not the note's machinery.
+    frontmatter, _ = _split_frontmatter(path.read_text(encoding="utf-8", errors="replace"))
+    path.write_text(frontmatter + str(text).rstrip("\n") + "\n", encoding="utf-8")
     return {"status": "saved", "file": path.name}

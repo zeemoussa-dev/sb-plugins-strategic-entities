@@ -4,6 +4,10 @@ All notable changes to the Strategic Entities plugin.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-24
+
+- fix: the captures no longer open with their own frontmatter. `type: "Captures"`, `parent`, `tags` are the note's machinery, not the record; they are hidden on screen and written back untouched when he saves, so correcting a capture cannot break the note.
+
 ## [0.3.0] - 2026-09-24
 
 - change: notes, captures and the hub note are **rendered as documents**, not dumped as text (operator, 2026-09-24: "The Rendering looks really bad for both editing and Viewing"). Headings, lists, tables, quotes, code and emphasis, styled to match the app; `[[wikilinks]]` become in-app links and `> [!abstract]` callouts become labelled blocks, both being Obsidian syntax that CommonMark renders as punctuation. Written in the plugin rather than with the host's own `react-markdown`: **a plugin's screens may import only react, react-router and `pluginHost`**, and the installer refuses anything else -- which it did, with a clear message, when this was first tried.

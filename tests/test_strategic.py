@@ -54,18 +54,25 @@ class FakeApi:
             read_text=lambda name: self.files.get(name),
             write_text=lambda name, text: self.files.__setitem__(name, text),
         )
-        self.vault = SimpleNamespace(index=self._index, read_note=read_note)
+        self.vault = SimpleNamespace(index=self._index, entries=self._entries,
+                                     read_note=read_note)
         self.hermes = SimpleNamespace(
             run_cron_job=lambda name, profile=None: self.jobs.append(name) or True)
 
-    def _index(self) -> dict:
-        found = {}
+    def _entries(self) -> list[dict]:
+        """Every note there is -- including two sharing a name, which is the
+        whole reason this call exists (framework `BUG-076`, v5)."""
+        found = []
         for note in self._vault.rglob("*.md"):
             frontmatter, _ = read_note(note)
-            found[note.stem] = {"path": str(note), "stem": note.stem,
-                                "frontmatter": frontmatter,
-                                "tags": frontmatter.get("tags", [])}
+            found.append({"path": str(note), "stem": note.stem,
+                          "frontmatter": frontmatter,
+                          "tags": frontmatter.get("tags", [])})
         return found
+
+    def _index(self) -> dict:
+        """One per name, as the framework's does -- the last one walked wins."""
+        return {entry["stem"]: entry for entry in self._entries()}
 
 
 def entity_folder(vault: Path, kind: str, name: str, *, charts=(), people=(),
@@ -121,6 +128,17 @@ def test_every_kind_of_entity_is_listed_by_its_hub_note(entities):
     assert found["ADNOC"]["tags"] == ["entity/adnoc"]
 
 
+def test_a_company_sharing_a_name_with_another_note_is_still_listed(vault, api):
+    """The vault index holds one note per filename, so listing companies from it
+    dropped any whose name something else already used -- a thread named after
+    the company it is about, most obviously (framework `BUG-076`)."""
+    other = vault / "Work" / "Threads"
+    other.mkdir(parents=True, exist_ok=True)
+    (other / "NVIDIA.md").write_text(
+        '---\ntype: "Thread"\n---\n\nnot a company\n', encoding="utf-8")
+    assert "NVIDIA" in {e["name"] for e in Entities(api).all()}
+
+
 def test_a_person_note_is_not_an_entity(vault, api):
     """Every People note carries `type: Person`, and there are hundreds."""
     assert all(e["kind"] != "Person" for e in Entities(api).all())
@@ -137,14 +155,6 @@ def test_an_entitys_folder_is_told_apart_by_what_is_in_it(entities):
 def test_a_file_outside_the_folder_cannot_be_asked_for(entities):
     with pytest.raises(FileNotFoundError):
         entities.read_file(entities.get("ADNOC"), "../NVIDIA/NVIDIA.md")
-
-
-def test_only_wikilinks_that_are_really_notes_are_offered_as_links(entities):
-    """The host renderer links a wikilink only when told the target exists, so
-    the screen has to say which ones do. A link to a note that is not here
-    should read as text rather than lead nowhere."""
-    text = "See [[NVIDIA]] and [[Someone Who Left|Sam]] and [[NVIDIA]] again."
-    assert entities.resolved_stems(text) == ["NVIDIA"]
 
 
 # ── the short list ───────────────────────────────────────────────────────

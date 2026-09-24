@@ -11,6 +11,10 @@ import { fetchChart, type Chart } from './client';
  *  now go through the same component the vault browser uses -- one app, one
  *  note, one rendering.
  *
+ *  Since framework 0.8.1 the renderer resolves the note's own `[[wikilinks]]`
+ *  itself (`BUG-079`, also raised from here), so nothing has to be handed to it
+ *  but the text.
+ *
  *  The one thing left here is the entity's own charts. A company note embeds
  *  its picture with `![[ADNOC-profile.svg]]`, which is a vault file rather than
  *  anything markdown can fetch: a plugin screen is handed `apiFetch` and does
@@ -57,18 +61,17 @@ export function ChartCard({ stem, file, caption = true }: {
   );
 }
 
-export function NoteBody({ text, stem, charts, resolvedStems }: {
+export function NoteBody({ text, stem, charts }: {
   text: string;
   stem: string;
   charts: string[];
-  resolvedStems: string[];
 }) {
   const blocks: ReactNode[] = [];
   let run: string[] = [];
 
   const flush = () => {
     if (run.join('\n').trim()) {
-      blocks.push(<NoteText key={blocks.length} text={run.join('\n')} resolvedStems={resolvedStems} />);
+      blocks.push(<NoteText key={blocks.length} text={run.join('\n')} />);
     }
     run = [];
   };

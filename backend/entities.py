@@ -10,7 +10,6 @@ This module reads; nothing here writes.
 """
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 KINDS = ("Customer", "Partner", "Affiliate", "Opportunity")
@@ -43,7 +42,11 @@ class Entities:
         """Every entity in the vault, by its hub note. Sorted by name, because
         the only way anybody reads a list of companies is by looking for one."""
         found = []
-        for entry in self._api.vault.index().values():
+        # `entries()`, not `index()`: the index keeps ONE note per filename and
+        # is for looking one up by name (framework `BUG-076`, v5). Listing the
+        # companies is the other question -- a company whose note shares a name
+        # with anything else would simply not be here.
+        for entry in self._api.vault.entries():
             frontmatter = entry.get("frontmatter") or {}
             kind = _text(frontmatter.get("type"))
             if kind not in KINDS:
@@ -100,22 +103,6 @@ class Entities:
 
         return {"captures": captures, "history": history, "people": people,
                 "charts": charts, "affiliates": affiliates, "other_files": others}
-
-    def resolved_stems(self, *texts: str) -> list[str]:
-        """Which `[[targets]]` in these texts are really notes in this vault.
-
-        The host renderer links a wikilink only when it is told the target
-        exists, so a screen showing note text has to say which ones do --
-        otherwise every `[[Name]]` is either a dead link or plain text."""
-        index = self._api.vault.index()
-        known = {str(stem) for stem in index}
-        found: list[str] = []
-        for text in texts:
-            for match in re.finditer(r"\[\[([^\]]+)\]\]", text or ""):
-                target = match.group(1).split("|")[0].strip()
-                if target in known and target not in found:
-                    found.append(target)
-        return found
 
     def read_file(self, entity: dict, filename: str) -> str:
         """One text file from the entity's folder, by name. The name is matched

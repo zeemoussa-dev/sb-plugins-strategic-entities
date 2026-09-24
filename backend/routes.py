@@ -79,7 +79,6 @@ def build_router(entities: Entities, api) -> APIRouter:
             "contents": entities.contents(entity),
             "captures": captures,
             "notes": notes,
-            "resolved_stems": entities.resolved_stems(body, captures, notes),
         }
 
     @router.get("/entities/{stem}/files/{filename}")

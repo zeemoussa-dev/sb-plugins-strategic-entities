@@ -33,9 +33,6 @@ export interface EntityDetail extends Entity {
   };
   captures: string;
   notes: string;
-  /** Wikilink targets in this entity's text that are real notes here; the host
-   *  renderer links those and leaves the rest as plain text. */
-  resolved_stems: string[];
 }
 
 function send<T>(path: string, method: string, body?: unknown): Promise<T> {

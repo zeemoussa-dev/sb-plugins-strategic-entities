@@ -20,8 +20,7 @@ function reason(error: unknown): string {
 function Body({ entity, text }: { entity: EntityDetail; text: string }) {
   return (
     <NoteBody text={text} stem={entity.stem}
-              charts={entity.contents.charts.map((chart) => chart.file)}
-              resolvedStems={entity.resolved_stems} />
+              charts={entity.contents.charts.map((chart) => chart.file)} />
   );
 }
 

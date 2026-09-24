@@ -18,7 +18,9 @@ What working on this plugin has taught, beyond what the code says.
   happened. The screen can correct one, because the reader is the person who
   notices it is wrong, and it is saved exactly as given.
 
-- **[2026-09-24] Rendering is not optional.** A company's page showing `## Summary` and `> [!abstract]` as literal text reads worse than the note behind it. The host already depends on `react-markdown`, `remark-gfm` and `rehype-slug`, and its own vault browser uses them -- so does this plugin, rather than a second renderer or a new dependency in the host's `package.json`, which is not this repository's to change.
+- **[2026-09-24] A plugin's screens may import only react, react-router and `pluginHost`.** The installer checks and refuses the rest -- including `react-markdown`, which the host itself depends on and uses in its vault browser. So rendering a note is the plugin's own to write. Worth knowing before reaching for a library: the refusal is at install time, not at build time, so it passes `tsc` first.
+
+- **[2026-09-24] Rendering is not optional.** A company's page showing `## Summary` and `> [!abstract]` as literal text reads worse than the note behind it.
 
 ## Constraints
 

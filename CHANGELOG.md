@@ -6,7 +6,7 @@ All notable changes to the Strategic Entities plugin.
 
 ## [0.3.0] - 2026-09-24
 
-- change: notes, captures and the hub note are **rendered as documents**, not dumped as text (operator, 2026-09-24: "The Rendering looks really bad for both editing and Viewing"). `react-markdown` + `remark-gfm`, the host's own dependencies and its own approach in the vault browser, with headings, tables, lists and code styled to match the app. `[[wikilinks]]` become in-app links and `> [!abstract]` callouts become labelled blocks -- both are Obsidian syntax that CommonMark renders as punctuation.
+- change: notes, captures and the hub note are **rendered as documents**, not dumped as text (operator, 2026-09-24: "The Rendering looks really bad for both editing and Viewing"). Headings, lists, tables, quotes, code and emphasis, styled to match the app; `[[wikilinks]]` become in-app links and `> [!abstract]` callouts become labelled blocks, both being Obsidian syntax that CommonMark renders as punctuation. Written in the plugin rather than with the host's own `react-markdown`: **a plugin's screens may import only react, react-router and `pluginHost`**, and the installer refuses anything else -- which it did, with a clear message, when this was first tried.
 - change: editing the captures is a **mode with a live preview beside it**, not a permanent textarea. Reading is the default, because that tab is mostly read; **Edit** opens the two-column view and **Discard** leaves it. Raw HTML is still never rendered.
 - change: a tidied note shows the agent's prose, with **as you typed it** collapsed underneath rather than the raw `<details>` markup running through the page.
 

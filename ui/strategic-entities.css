@@ -183,3 +183,15 @@
   padding-left: var(--space-4);
   columns: 2;
 }
+
+/* A callout the capture passes write at the top of a company note. */
+.md-callout { position: relative; }
+
+.md-callout-kind {
+  display: block;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}

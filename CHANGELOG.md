@@ -2,6 +2,10 @@
 
 All notable changes to the Strategic Entities plugin.
 
+## [0.8.3] - 2026-09-26
+
+- chore: `framework_api` 6. Second Brain 0.9.1 fixed `BUG-080` -- a note's tables and callouts render as tables and callouts now, on this screen as well as in the vault browser -- and added `vault.attachments()`, `vault.read_section()` and `pluginHost/apiUrl`, which this plugin does not use yet.
+
 ## [0.8.2] - 2026-09-26
 
 - fix: a written file whose name matches a tab that already exists -- `<Name>-people.md` against the People tab -- keeps its own file name instead. Two tabs of one name showed two panels at once, and the research skill should be free to name its files what it likes.

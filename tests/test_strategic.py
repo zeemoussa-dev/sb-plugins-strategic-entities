@@ -157,6 +157,65 @@ def test_a_file_outside_the_folder_cannot_be_asked_for(entities):
         entities.read_file(entities.get("ADNOC"), "../NVIDIA/NVIDIA.md")
 
 
+# ── the brief for the research skill ─────────────────────────────────────
+
+def test_the_brief_says_where_the_company_lives_not_just_its_name(api, entities):
+    """The skill has to find the folder to write into; a name is not enough."""
+    from backend import enrichment
+    adnoc = entities.get("ADNOC")
+    enrichment.set_for(api, adnoc, entities.all(), topics=["news", "opportunities"],
+                       cadence="weekly", watch_for="anything about XRG")
+
+    brief = api.files[enrichment.BRIEF]
+    assert "| ADNOC | News and announcements, What Core42 should look at | weekly |" in brief
+    assert str(adnoc["folder"]) in brief
+    assert "anything about XRG" in brief
+    assert "enrichment/done" in brief, "how to hand back what it found"
+
+
+def test_a_topic_nothing_understands_is_not_written_down(api, entities):
+    from backend import enrichment
+    row = enrichment.set_for(api, entities.get("ADNOC"), entities.all(),
+                             topics=["news", "astrology"], cadence="whenever")
+    assert row["topics"] == ["news"]
+    assert row["cadence"] == "monthly", "an unknown cadence is not invented"
+
+
+def test_taking_every_topic_off_takes_the_company_off_the_brief(api, entities):
+    from backend import enrichment
+    adnoc = entities.get("ADNOC")
+    enrichment.set_for(api, adnoc, entities.all(), topics=["news"], cadence="weekly")
+    enrichment.set_for(api, adnoc, entities.all(), topics=[], cadence="weekly")
+    assert enrichment.read(api) == {}
+    assert "ADNOC" not in api.files[enrichment.BRIEF].split("## For the research skill")[0]
+
+
+def test_what_the_skill_did_is_remembered_once_per_topic(api, entities):
+    """The question this answers is "when was this last looked at", so the last
+    run of each topic is what is kept."""
+    from backend import enrichment
+    adnoc = entities.get("ADNOC")
+    enrichment.set_for(api, adnoc, entities.all(), topics=["news"], cadence="weekly")
+    enrichment.record_run(api, adnoc, entities.all(), topic="news",
+                          file="ADNOC-news.md", summary="first pass")
+    row = enrichment.record_run(api, adnoc, entities.all(), topic="news",
+                                file="ADNOC-news.md", summary="second pass")
+
+    assert [(r["topic"], r["summary"]) for r in row["runs"]] == [("news", "second pass")]
+    assert "ADNOC-news.md" in api.files[enrichment.BRIEF]
+
+
+def test_a_company_that_vanished_is_said_plainly_in_the_brief(api, entities):
+    """A row for a company nobody can find must not quietly disappear -- the
+    skill would keep the job and nobody would know it was pointing at nothing."""
+    from backend import enrichment
+    enrichment.set_for(api, entities.get("NVIDIA"), entities.all(), topics=["news"],
+                       cadence="monthly")
+    thinner = [e for e in entities.all() if e["stem"] != "NVIDIA"]
+    enrichment.record_run(api, entities.get("NVIDIA"), thinner, topic="news")
+    assert "gone from the vault" in api.files[enrichment.BRIEF]
+
+
 # ── the short list ───────────────────────────────────────────────────────
 
 def test_adding_one_writes_the_row_and_the_expert_to_create(api, entities):

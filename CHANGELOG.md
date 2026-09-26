@@ -2,6 +2,12 @@
 
 All notable changes to the Strategic Entities plugin.
 
+## [0.8.0] - 2026-09-26
+
+- feat: **a brief for a research skill** (operator, 2026-09-26). Each strategic company can be ticked for news, what Core42 should look at, a profile refresh or people and org moves, with a cadence and anything particular to watch for. It is written to `Settings/Strategic-Enrichment.md` -- readable off disk without this backend -- and served at `GET /enrichment` with each company's folder, note, domains and aliases, because a skill needs to know where to write, not just what the company is called.
+- feat: the skill says what it did (`POST /entities/{stem}/enrichment/done`), and the screen shows when each topic was last looked at and which file it went into. Nothing here fetches anything: the research is a Claude skill on its own schedule, so there is deliberately no "run now" button promising something this plugin cannot do.
+- feat: **whatever the skill writes shows up by itself**. Any markdown in a company's folder that is not its note, captures, history or personal notes becomes its own tab, named after the file -- so `<Name>-news.md` appears without the plugin being taught about it.
+
 ## [0.7.0] - 2026-09-25
 
 - fix: **a company whose note shares a name with another note is listed again.** The companies were read from the vault index, which keeps one note per filename (framework `BUG-076`), so a company with a thread named after it simply was not there. It walks `entries()` now -- every note -- which is what framework v5 separated the two calls for.

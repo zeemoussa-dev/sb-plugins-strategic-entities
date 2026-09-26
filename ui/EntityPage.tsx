@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiError } from '../../pluginHost/api';
 import { ChartCard, NoteBody, embedsIn } from './NoteBody';
+import { Enrichment } from './Enrichment';
+import { fetchEntityFile } from './client';
 import { addNote, fetchEntity, saveCaptures, type EntityDetail } from './client';
 
 function reason(error: unknown): string {
@@ -145,13 +147,48 @@ function Notes({ entity, onSaved }: { entity: EntityDetail; onSaved: () => void 
   );
 }
 
-const TABS = ['Overview', 'Captures', 'Notes', 'People'] as const;
+const TABS = ['Overview', 'Captures', 'Notes', 'Enrichment', 'People'];
+
+/** A markdown file in the company's folder that neither the capture passes nor
+ *  this plugin wrote -- which in practice means the research skill did.
+ *
+ *  It is not listed by name anywhere: the skill decides where each kind of
+ *  finding belongs (operator, 2026-09-26), so the screen shows whatever turned
+ *  up rather than the two or three files somebody thought of in advance. */
+function Written({ entity, file }: { entity: EntityDetail; file: string }) {
+  const [text, setText] = useState<string | null>(null);
+  const [failed, setFailed] = useState('');
+
+  useEffect(() => {
+    fetchEntityFile(entity.stem, file).then((answer) => setText(answer.text),
+                                            (error) => setFailed(reason(error)));
+  }, [entity.stem, file]);
+
+  if (failed) return <p className="text-warning">{failed}</p>;
+  if (text === null) return <p className="text-muted">Loading…</p>;
+  if (!text.trim()) return <p className="text-muted">{file} is empty.</p>;
+  return (
+    <>
+      <p className="text-muted">{file}</p>
+      <Body entity={entity} text={text} />
+    </>
+  );
+}
+
+/** "ADNOC-news.md" reads as "News" on a tab of ADNOC's own page. */
+function tabName(file: string, entity: string): string {
+  const bare = file.replace(/\.md$/i, '');
+  const shorter = bare.toLowerCase().startsWith(entity.toLowerCase())
+    ? bare.slice(entity.length).replace(/^[-_ ]+/, '') : bare;
+  const words = (shorter || bare).replace(/[-_]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
 
 export function EntityPage() {
   const { stem = '' } = useParams<{ stem: string }>();
   const [entity, setEntity] = useState<EntityDetail | null>(null);
   const [missing, setMissing] = useState(false);
-  const [tab, setTab] = useState<(typeof TABS)[number]>('Overview');
+  const [tab, setTab] = useState('Overview');
 
   const load = useCallback(() => {
     fetchEntity(stem).then(setEntity, (error) => {
@@ -171,6 +208,10 @@ export function EntityPage() {
   const { contents } = entity;
   const shown = embedsIn(entity.note);
   const unshown = contents.charts.filter((chart) => !shown.includes(chart.file));
+  // Whatever else is filed under this company as text -- the research skill's
+  // own files, whichever it decided to write.
+  const written = contents.other_files.filter((file) => file.kind === 'md');
+  const tabs = [...TABS, ...written.map((file) => tabName(file.file, entity.name))];
   return (
     <>
       {back}
@@ -192,12 +233,14 @@ export function EntityPage() {
       </div>
 
       <div className="entity-tabs">
-        {TABS.map((name) => (
+        {tabs.map((name) => (
           <button key={name} type="button"
                   className={tab === name ? 'is-selected' : undefined}
                   onClick={() => setTab(name)}>
             {name}
             {name === 'People' && contents.people.length ? ` (${contents.people.length})` : ''}
+            {name === 'Enrichment' && entity.enrichment.topics.length
+              ? ` (${entity.enrichment.topics.length})` : ''}
           </button>
         ))}
       </div>
@@ -217,6 +260,10 @@ export function EntityPage() {
           </>
         )}
         {tab === 'Captures' && <Captures entity={entity} onSaved={load} />}
+        {tab === 'Enrichment' && <Enrichment entity={entity} onSaved={load} />}
+        {written.map((file) => (tab === tabName(file.file, entity.name)
+          ? <Written key={file.file} entity={entity} file={file.file} />
+          : null))}
         {tab === 'Notes' && <Notes entity={entity} onSaved={load} />}
         {tab === 'People' && (
           contents.people.length

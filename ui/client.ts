@@ -33,6 +33,38 @@ export interface EntityDetail extends Entity {
   };
   captures: string;
   notes: string;
+  enrichment: Enrichment;
+}
+
+export interface EnrichmentRun {
+  topic: string;
+  file: string;
+  summary: string;
+  at: string;
+}
+
+export interface Enrichment {
+  topics: string[];
+  cadence: string;
+  watch_for: string;
+  runs: EnrichmentRun[];
+}
+
+/** What this company should be watched for. The research itself is a Claude
+ *  skill on its own schedule -- this is the brief it reads. */
+/** One text file from the company's folder -- what the research skill wrote. */
+export function fetchEntityFile(stem: string, file: string): Promise<{
+  file: string; text: string;
+}> {
+  return apiFetch(
+    `${BASE}/entities/${encodeURIComponent(stem)}/files/${encodeURIComponent(file)}`);
+}
+
+export function saveEnrichment(stem: string, brief: {
+  topics: string[]; cadence: string; watch_for: string;
+}): Promise<Enrichment> {
+  return send<Enrichment>(
+    `${BASE}/entities/${encodeURIComponent(stem)}/enrichment`, 'PUT', brief);
 }
 
 function send<T>(path: string, method: string, body?: unknown): Promise<T> {

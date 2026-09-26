@@ -6,7 +6,7 @@ import mimetypes
 
 from fastapi import APIRouter, Body, HTTPException
 
-from . import strategic, writing
+from . import enrichment, strategic, writing
 from .entities import Entities
 
 
@@ -79,7 +79,57 @@ def build_router(entities: Entities, api) -> APIRouter:
             "contents": entities.contents(entity),
             "captures": captures,
             "notes": notes,
+            "enrichment": enrichment.for_entity(api, stem),
         }
+
+    @router.get("/enrichment")
+    def enrichment_brief() -> dict:
+        """The whole brief, for the research skill: which companies, what to look
+        for, where each one lives, and when it was last done.
+
+        The same thing is written as markdown to `Settings/Strategic-Enrichment.md`,
+        so a skill can read it off disk without this backend running."""
+        asked = enrichment.read(api)
+        known = {entity["stem"]: entity for entity in entities.all()}
+        jobs = []
+        for stem, row in sorted(asked.items(), key=lambda pair: pair[0].lower()):
+            entity = known.get(stem)
+            jobs.append({
+                "stem": stem,
+                "name": (entity or {}).get("name") or stem,
+                "missing": entity is None,
+                "folder": (entity or {}).get("folder"),
+                "note_path": (entity or {}).get("note_path"),
+                "domains": (entity or {}).get("domains") or [],
+                "aliases": (entity or {}).get("aliases") or [],
+                **row,
+            })
+        return {"topics": enrichment.TOPICS, "cadences": list(enrichment.CADENCES),
+                "brief_file": enrichment.BRIEF, "entities": jobs}
+
+    @router.put("/entities/{stem}/enrichment")
+    def set_enrichment(stem: str, payload: dict = Body(...)) -> dict:
+        """What this company should be watched for. No topics takes it off the
+        brief."""
+        entity = _entity(stem)
+        return enrichment.set_for(api, entity, entities.all(),
+                                  topics=payload.get("topics") or [],
+                                  cadence=payload.get("cadence", "monthly"),
+                                  watch_for=payload.get("watch_for", ""))
+
+    @router.post("/entities/{stem}/enrichment/done")
+    def enrichment_done(stem: str, payload: dict = Body(...)) -> dict:
+        """The research skill saying what it did: the topic, the file it wrote,
+        and a line about it. Nothing here reads or judges that file -- the skill
+        writes where it decides, and this remembers that it happened."""
+        entity = _entity(stem)
+        try:
+            return enrichment.record_run(api, entity, entities.all(),
+                                         topic=payload.get("topic", ""),
+                                         file=payload.get("file", ""),
+                                         summary=payload.get("summary", ""))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @router.get("/entities/{stem}/files/{filename}")
     def entity_file(stem: str, filename: str) -> dict:

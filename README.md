@@ -42,6 +42,9 @@ at:
 The last run of each topic is kept, because the question it answers is "when was
 this last looked at".
 
+The prompt that creates that skill as a scheduled task is
+`docs/research-skill-prompt.md`.
+
 ## Installing
 
 This plugin installs from this repository (`ADR-024`):

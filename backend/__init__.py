@@ -19,6 +19,7 @@ Everything it needs from the framework arrives through the Plugin API handed to
 """
 from __future__ import annotations
 
+from .enrichment import BRIEF, STATE
 from .entities import Entities
 from .routes import build_router
 from .strategic import BOOK
@@ -26,7 +27,11 @@ from .writing import REQUESTS as NOTE_REQUESTS
 
 
 def register(api) -> None:
-    # The list itself, and the one tray the install's note-tidying job reads.
+    # The list itself, the tray the note-tidying job reads, and the enrichment
+    # brief -- markdown for the research skill to read off disk, plus the state
+    # behind it. A data file this plugin has not registered cannot be written.
     api.register_seed_data_file(BOOK)
     api.register_seed_data_file(NOTE_REQUESTS)
+    api.register_seed_data_file(BRIEF)
+    api.register_seed_data_file(STATE)
     api.register_router(build_router(Entities(api), api))

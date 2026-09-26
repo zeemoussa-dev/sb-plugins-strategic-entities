@@ -2,6 +2,10 @@
 
 All notable changes to the Strategic Entities plugin.
 
+## [0.8.1] - 2026-09-26
+
+- fix: the brief could not be written. A plugin may only write data files it registered, and the two new ones were not -- so saving a brief was a 500. Caught on the live install rather than in tests, where the API is stubbed.
+
 ## [0.8.0] - 2026-09-26
 
 - feat: **a brief for a research skill** (operator, 2026-09-26). Each strategic company can be ticked for news, what Core42 should look at, a profile refresh or people and org moves, with a cadence and anything particular to watch for. It is written to `Settings/Strategic-Enrichment.md` -- readable off disk without this backend -- and served at `GET /enrichment` with each company's folder, note, domains and aliases, because a skill needs to know where to write, not just what the company is called.

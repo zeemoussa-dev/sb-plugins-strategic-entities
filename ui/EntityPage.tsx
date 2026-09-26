@@ -211,7 +211,18 @@ export function EntityPage() {
   // Whatever else is filed under this company as text -- the research skill's
   // own files, whichever it decided to write.
   const written = contents.other_files.filter((file) => file.kind === 'md');
-  const tabs = [...TABS, ...written.map((file) => tabName(file.file, entity.name))];
+  // A file's tab is named after the file, so `<Name>-people.md` would collide
+  // with the People tab that lists the folder. Two tabs of one name show two
+  // panels at once: the later one keeps the file's own name instead.
+  const fileTabs = new Map<string, string>();
+  const taken = new Set<string>(TABS);
+  for (const file of written) {
+    let name = tabName(file.file, entity.name);
+    if (taken.has(name)) name = file.file.replace(/\.md$/i, '');
+    taken.add(name);
+    fileTabs.set(file.file, name);
+  }
+  const tabs = [...TABS, ...fileTabs.values()];
   return (
     <>
       {back}
@@ -261,7 +272,7 @@ export function EntityPage() {
         )}
         {tab === 'Captures' && <Captures entity={entity} onSaved={load} />}
         {tab === 'Enrichment' && <Enrichment entity={entity} onSaved={load} />}
-        {written.map((file) => (tab === tabName(file.file, entity.name)
+        {written.map((file) => (tab === fileTabs.get(file.file)
           ? <Written key={file.file} entity={entity} file={file.file} />
           : null))}
         {tab === 'Notes' && <Notes entity={entity} onSaved={load} />}

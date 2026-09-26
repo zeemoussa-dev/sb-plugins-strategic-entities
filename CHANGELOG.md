@@ -2,6 +2,10 @@
 
 All notable changes to the Strategic Entities plugin.
 
+## [0.8.2] - 2026-09-26
+
+- fix: a written file whose name matches a tab that already exists -- `<Name>-people.md` against the People tab -- keeps its own file name instead. Two tabs of one name showed two panels at once, and the research skill should be free to name its files what it likes.
+
 ## [0.8.1] - 2026-09-26
 
 - fix: the brief could not be written. A plugin may only write data files it registered, and the two new ones were not -- so saving a brief was a 500. Caught on the live install rather than in tests, where the API is stubbed.

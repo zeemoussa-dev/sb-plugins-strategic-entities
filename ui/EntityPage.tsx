@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router';
 import { ApiError } from '../../pluginHost/api';
 import { ChartCard, NoteBody, embedsIn } from './NoteBody';
 import { Enrichment } from './Enrichment';
+import { EntityActions } from './EntityActions';
 import { fetchEntityFile } from './client';
 import { addNote, fetchEntity, saveCaptures, type EntityDetail } from './client';
 
@@ -147,7 +148,7 @@ function Notes({ entity, onSaved }: { entity: EntityDetail; onSaved: () => void 
   );
 }
 
-const TABS = ['Overview', 'Captures', 'Notes', 'Enrichment', 'People'];
+const TABS = ['Overview', 'Actions', 'Captures', 'Notes', 'Enrichment', 'People'];
 
 /** A markdown file in the company's folder that neither the capture passes nor
  *  this plugin wrote -- which in practice means the research skill did.
@@ -270,6 +271,7 @@ export function EntityPage() {
             ))}
           </>
         )}
+        {tab === 'Actions' && <EntityActions entity={entity} />}
         {tab === 'Captures' && <Captures entity={entity} onSaved={load} />}
         {tab === 'Enrichment' && <Enrichment entity={entity} onSaved={load} />}
         {written.map((file) => (tab === fileTabs.get(file.file)

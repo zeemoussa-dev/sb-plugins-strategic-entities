@@ -157,6 +157,12 @@ def test_a_file_outside_the_folder_cannot_be_asked_for(entities):
         entities.read_file(entities.get("ADNOC"), "../NVIDIA/NVIDIA.md")
 
 
+def test_an_entity_says_which_tag_its_work_carries(entities):
+    """Its actions are found by the tag, not the name: a company gets renamed
+    and its tag does not (operator, 2026-09-29)."""
+    assert entities.get("ADNOC")["entity_tag"] == "entity/adnoc"
+
+
 # ── the brief for the research skill ─────────────────────────────────────
 
 def test_the_brief_says_where_the_company_lives_not_just_its_name(api, entities):

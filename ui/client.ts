@@ -21,6 +21,9 @@ export interface EntityFile {
 }
 
 export interface EntityDetail extends Entity {
+  /** The tag everything about this company carries (`customer/adnoc`), which
+   *  is how its actions are found. */
+  entity_tag?: string;
   note: string;
   facts: Record<string, unknown>;
   contents: {

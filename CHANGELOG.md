@@ -2,6 +2,11 @@
 
 All notable changes to the Strategic Entities plugin.
 
+## [0.9.0] - 2026-09-29
+
+- feat: **an Actions tab on every company** (operator, 2026-09-29: "include Actions Related to them ... will simplify things a lot"). What is open with that company, who owes it, what is overdue, and what was closed -- asked of the Action Center, which keeps owning them, so there is no second copy of anybody's commitments. Every row opens the action itself, where it can be chased or closed.
+- feat: the detail response says which tag a company's work carries (`customer/adnoc`). Its actions are found by that rather than by the name, because a company gets renamed and its tag does not.
+
 ## [0.8.3] - 2026-09-26
 
 - chore: `framework_api` 6. Second Brain 0.9.1 fixed `BUG-080` -- a note's tables and callouts render as tables and callouts now, on this screen as well as in the vault browser -- and added `vault.attachments()`, `vault.read_section()` and `pluginHost/apiUrl`, which this plugin does not use yet.

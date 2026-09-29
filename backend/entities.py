@@ -62,6 +62,13 @@ class Entities:
                 "aliases": _listed(frontmatter.get("aliases")),
                 "domains": _listed(frontmatter.get("domain")),
                 "tags": [t for t in (entry.get("tags") or []) if _text(t)],
+                # The tag the capture passes write on anything about this
+                # company -- `customer/adnoc`. An action carries the same one,
+                # so the two screens agree even after a rename.
+                "entity_tag": next((t for t in (entry.get("tags") or [])
+                                    if _text(t).split("/")[0] in
+                                    ("customer", "partner", "entity", "affiliate",
+                                     "opportunity")), ""),
                 "folder": str(note.parent),
                 "note_path": path,
             })

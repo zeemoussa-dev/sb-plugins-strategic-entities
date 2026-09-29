@@ -80,6 +80,12 @@ def build_router(entities: Entities, api) -> APIRouter:
             "captures": captures,
             "notes": notes,
             "enrichment": enrichment.for_entity(api, stem),
+            # This company and the ones whose work belongs with it: its
+            # affiliates, and its parent when it is one itself.
+            "family": [{"name": member["name"], "stem": member["stem"],
+                        "entity_tag": member.get("entity_tag") or "",
+                        "relation": member["relation"]}
+                       for member in entities.family(entity)],
         }
 
     @router.get("/enrichment")

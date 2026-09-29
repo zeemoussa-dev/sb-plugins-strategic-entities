@@ -24,6 +24,9 @@ export interface EntityDetail extends Entity {
   /** The tag everything about this company carries (`customer/adnoc`), which
    *  is how its actions are found. */
   entity_tag?: string;
+  /** This company and the ones whose work belongs with it: its affiliates, and
+   *  its parent when it is one itself. */
+  family?: { name: string; stem: string; entity_tag: string; relation: string }[];
   note: string;
   facts: Record<string, unknown>;
   contents: {

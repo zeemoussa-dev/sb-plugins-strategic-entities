@@ -2,6 +2,10 @@
 
 All notable changes to the Strategic Entities plugin.
 
+## [0.9.1] - 2026-09-29
+
+- fix: **an affiliate's page shows the family's actions.** TAQA Distribution had none of its own while nine sat on TAQA, because a strategic company is often an affiliate (`Customers/TAQA/Affiliates/TAQA Distribution`) and a thread is tagged with whichever company the mail was about -- usually the parent (operator, 2026-09-29: "the Parent Entity is TAQA I guess Tagging missed that one up"). The tab now reads the entity, its affiliates and its parent, and every row that is not this company's own says whose it is.
+
 ## [0.9.0] - 2026-09-29
 
 - feat: **an Actions tab on every company** (operator, 2026-09-29: "include Actions Related to them ... will simplify things a lot"). What is open with that company, who owes it, what is overdue, and what was closed -- asked of the Action Center, which keeps owning them, so there is no second copy of anybody's commitments. Every row opens the action itself, where it can be chased or closed.

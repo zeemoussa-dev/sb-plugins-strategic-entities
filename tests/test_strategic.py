@@ -157,6 +157,32 @@ def test_a_file_outside_the_folder_cannot_be_asked_for(entities):
         entities.read_file(entities.get("ADNOC"), "../NVIDIA/NVIDIA.md")
 
 
+def test_an_affiliate_knows_its_parent_and_a_parent_its_affiliates(vault, api):
+    """A strategic company is often an affiliate, and the threads are tagged
+    with whichever company the mail was about -- usually the parent. TAQA
+    Distribution showed no actions while nine sat on TAQA (operator,
+    2026-09-29)."""
+    entity_folder(vault, "Customer", "TAQA")
+    child = vault / "Work" / "Customers" / "TAQA" / "Affiliates" / "TAQA Distribution"
+    (child / "_assets").mkdir(parents=True, exist_ok=True)
+    (child / "TAQA Distribution.md").write_text(chr(10).join([
+        "---",
+        'type: "Customer"',
+        'name: "TAQA Distribution"',
+        'tags: ["customer/taqa-distribution"]',
+        "---",
+        "",
+        "## Summary",
+    ]), encoding="utf-8")
+    found = Entities(api)
+
+    of_the_child = {m["relation"]: m["name"] for m in found.family(found.get("TAQA Distribution"))}
+    assert of_the_child == {"self": "TAQA Distribution", "parent": "TAQA"}
+
+    of_the_parent = {m["relation"]: m["name"] for m in found.family(found.get("TAQA"))}
+    assert of_the_parent == {"self": "TAQA", "affiliate": "TAQA Distribution"}
+
+
 def test_an_entity_says_which_tag_its_work_carries(entities):
     """Its actions are found by the tag, not the name: a company gets renamed
     and its tag does not (operator, 2026-09-29)."""

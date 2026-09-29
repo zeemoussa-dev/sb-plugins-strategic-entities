@@ -15,6 +15,10 @@ import type { EntityDetail } from './client';
  *  renamed and its tag does not.
  */
 interface Action {
+  /** Empty when the action is this company's own; otherwise the relative whose
+   *  thread it came from. */
+  whose?: string;
+  relation?: string;
   stem: string;
   subject: string;
   owner: string;
@@ -29,13 +33,32 @@ interface Action {
 
 const ACTION_CENTER = '/plugins/action-center';
 
-function ask(entity: EntityDetail, status: string): Promise<Action[]> {
-  // The tag first; the name is the fallback for an action linked before the
-  // tag was written, or by hand.
-  const by = entity.entity_tag
-    ? `entity_tag=${encodeURIComponent(entity.entity_tag)}`
-    : `entity=${encodeURIComponent(entity.name)}`;
-  return apiFetch<Action[]>(`${ACTION_CENTER}/actions?status=${status}&${by}`);
+/** The whole family's actions, each labelled with whose it is.
+ *
+ *  A strategic company is often an affiliate -- TAQA Distribution lives under
+ *  TAQA -- and a thread is tagged with whichever company the mail was about,
+ *  usually the parent. Asking only for the entity's own tag showed nothing
+ *  while nine actions sat on TAQA (operator, 2026-09-29). So the parent's and
+ *  the affiliates' are fetched too, and a row says whose it is rather than
+ *  quietly reading as this company's own. */
+async function ask(entity: EntityDetail, status: string): Promise<Action[]> {
+  const family = entity.family?.length
+    ? entity.family
+    : [{ name: entity.name, stem: entity.stem, entity_tag: entity.entity_tag ?? '',
+         relation: 'self' as const }];
+  const lists = await Promise.all(family.map(async (member) => {
+    const by = member.entity_tag
+      ? `entity_tag=${encodeURIComponent(member.entity_tag)}`
+      : `entity=${encodeURIComponent(member.name)}`;
+    const rows = await apiFetch<Action[]>(`${ACTION_CENTER}/actions?status=${status}&${by}`);
+    return rows.map((row) => ({
+      ...row,
+      whose: member.relation === 'self' ? '' : member.name,
+      relation: member.relation,
+    }));
+  }));
+  const seen = new Set<string>();
+  return lists.flat().filter((row) => !seen.has(row.stem) && seen.add(row.stem));
 }
 
 function Row({ action }: { action: Action }) {
@@ -51,6 +74,11 @@ function Row({ action }: { action: Action }) {
         <span className="item-row-title">{action.subject}</span>
         <span className="item-row-meta">{meta.join(' · ')}</span>
       </div>
+      {action.whose && (
+        <span className="badge" title={`Filed under ${action.whose}, the ${action.relation}`}>
+          {action.whose}
+        </span>
+      )}
       {action.overdue && <span className="badge badge-warning">Overdue</span>}
     </Link>
   );
@@ -80,12 +108,15 @@ export function EntityActions({ entity }: { entity: EntityDetail }) {
   if (open === null) return <p className="text-muted">Loading…</p>;
 
   const overdue = open.filter((action) => action.overdue).length;
+  const related = open.filter((action) => action.whose).length;
   return (
     <>
       <p className="text-muted">
         {open.length
           ? `${open.length} open · ${overdue} overdue · ${done?.length ?? 0} closed`
           : 'Nothing open with this company.'}
+        {related > 0 && ` — ${related} of them filed under `}
+        {related > 0 && [...new Set(open.filter((a) => a.whose).map((a) => a.whose))].join(', ')}
         {' '}
         <Link to={`/action-center?entity=${encodeURIComponent(entity.name)}`}>
           open the Action Center

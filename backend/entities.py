@@ -75,6 +75,37 @@ class Entities:
         found.sort(key=lambda e: e["name"].lower())
         return found
 
+    def family(self, entity: dict) -> list[dict]:
+        """This company and the ones whose work belongs with it.
+
+        A strategic company is often an affiliate -- `TAQA Distribution` lives
+        under `Customers/TAQA/Affiliates/` -- and the threads are tagged with
+        whichever company the mail was about, usually the parent. So its own
+        page showed nothing while nine actions sat on TAQA (operator,
+        2026-09-29: "the Parent Entity is TAQA I guess Tagging missed that one
+        up").
+
+        Family is the entity itself, the affiliates filed under it, and its
+        parent when it is itself an affiliate. Each says which it is, so a
+        screen can show whose work a row really is rather than quietly
+        attributing it."""
+        folder = Path(entity["folder"])
+        by_folder = {Path(other["folder"]): other for other in self.all()}
+        found = [{**entity, "relation": "self"}]
+
+        affiliates = folder / "Affiliates"
+        if affiliates.is_dir():
+            for child in sorted(affiliates.iterdir()):
+                other = by_folder.get(child)
+                if other:
+                    found.append({**other, "relation": "affiliate"})
+
+        if folder.parent.name == "Affiliates":
+            parent = by_folder.get(folder.parent.parent)
+            if parent:
+                found.append({**parent, "relation": "parent"})
+        return found
+
     def get(self, stem: str) -> dict | None:
         wanted = _text(stem)
         return next((e for e in self.all() if e["stem"] == wanted), None)
